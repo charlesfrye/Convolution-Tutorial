@@ -1,4 +1,4 @@
-name: neur299
+name: binder-base
 dependencies:
 - jupyter
 - matplotlib==1.5.3
@@ -7,4 +7,4 @@ dependencies:
 - scikit-learn==0.18.1
 - scipy==0.18.1
 - seaborn==0.7.1
-- statsmodels==0.6.1
+- pillow
