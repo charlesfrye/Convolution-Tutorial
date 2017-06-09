@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 # A Whole Bunch of Convenience Functions for Cleaning Up Plots
 def removeAxes(ax):
@@ -41,6 +42,7 @@ def cleanPlot(ax):
 def setLims(ax,xBounds,yBounds):
     ax.set_xlim(xBounds); ax.set_ylim(yBounds);
 
+# 01 - What's a Convolution?
 def plotSignal(signal,signalName):
     plt.figure(figsize=(12,2));
     plt.plot(signal,'-o',color='k');
@@ -120,3 +122,61 @@ def randomWalk(tMax=1,sigma=1,eps=0.1):
     for t in np.arange(0,tMax,eps):
         signal.append(signal[-1]+np.random.normal(0,sigma*scaleFactor))
     return np.asarray(signal[1:])
+
+#03 - Convolutions and Probability                
+def setupRun(pmf,iters):
+    pmfs = [pmf]
+    xMax = iters*(len(pmf)-1)
+    xLocations = list(range(xMax+2))
+    xLabels = [str(loc) if (loc%(len(pmf)-1))==0 else '' for loc in xLocations]
+    extendedPMF = np.hstack([pmfs[0],[0]*(xMax+2-len(pmfs[0]))])
+    edge = 2
+    fig = plt.figure(figsize=(12,6)); pmfAx = plt.subplot(111)
+    pmfBars = pmfAx.bar(xLocations,extendedPMF,width=1,align='center',alpha=0.8,
+                       linewidth=0,)
+
+    setupPlot(plt.gca(),xLocations,edge,xLabels)
+    
+    plt.suptitle("Adding " + str(iters) + " Random Numbers",
+             size=24,weight='bold',y=1.);
+    fig.canvas.draw()
+
+    return fig,pmfBars,pmfs
+
+def setupPlot(ax,locs,edge,labels):
+    ax.set_ylim([0,1]); ax.set_xlim([locs[0]-edge,locs[1]+edge]);
+    ax.xaxis.set_ticks(locs); ax.xaxis.set_ticklabels(labels)
+    ax.yaxis.set_ticks([0,0.5,1]);
+    ax.tick_params(axis='x',top='off')
+    ax.tick_params(axis='y',right='off')
+    plt.ylabel('Probability',fontsize='x-large',fontweight='bold')
+
+def addingRandomNumbersDemo(pmf,iterations=5):
+    assert min(pmf) >= 0, "no negative numbers in pmf"
+    assert np.isclose(sum(pmf), 1), "doesn't sum to 1"
+    assert max(pmf) < 1, "must have non-zero variance"
+
+    figure,barPlot,pmfs = setupRun(pmf,iterations)
+    time.sleep(0.2)
+    for _ in range(iterations):
+        [barPlot[idx].set_height(h)
+             for idx,h in enumerate(pmfs[-1])]
+        pmfs.append(np.convolve(pmfs[-1],pmfs[0]))
+        figure.canvas.draw()
+        time.sleep(0.1*(1-0.1)**_)
+        
+def probabilityPlot(ax,locs,edge,labels):
+    ax.set_ylim([0,1]); ax.set_xlim([locs[0]-edge,locs[-1]+edge]);
+    ax.xaxis.set_ticklabels('');
+    ax.xaxis.set_ticks(locs); ax.xaxis.set_ticklabels(labels,fontweight='bold',fontsize='large')
+    ax.yaxis.set_ticks([0,0.5,1]);
+    ax.tick_params(axis='x',top='off')
+    ax.tick_params(axis='y',right='off')
+    plt.ylabel('Probability',fontweight='bold',fontsize='x-large')
+
+def plotDistribution(pmf):
+    plt.figure()
+    ax = plt.axes()
+    values = np.asarray(range(len(pmf)))
+    plt.bar(values-0.4, pmf)
+    probabilityPlot(ax,values,0.5,[str(value) for value in values])
